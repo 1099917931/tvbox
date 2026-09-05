@@ -1,0 +1,1429 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>RateFuse 榜单</title>
+    <style>
+        /* RateFuse 榜单 · 赛博霓虹风格 */
+        :root {
+            color-scheme: dark;
+            --bg-fallback: #03111f;
+            --panel-rgb: 5, 22, 42;
+            --panel: rgba(var(--panel-rgb), .76);
+            --panel-soft: rgba(var(--panel-rgb), .56);
+            --panel-strong: rgba(var(--panel-rgb), .94);
+            --line: rgba(42, 169, 255, .2);
+            --line-soft: rgba(42, 169, 255, .1);
+            --line-strong: rgba(70, 196, 255, .38);
+            --ink: #e9f8ff;
+            --ink-soft: #9bc7df;
+            --ink-faint: #5d86a7;
+            --gold: #44b8ff;
+            --gold-deep: #1377d8;
+            --gold-lite: #8bdcff;
+            --gold-edge: #5ee7ff;
+            --gold-rgb: 68, 184, 255;
+            --on-gold: #02101f;
+            --gold-soft: rgba(var(--gold-rgb), .16);
+            --cyan: #5ee7ff;
+            --green: #38f5c6;
+            --danger: #ff4d70;
+            --safe-top: var(--fm-safe-top, 0px);
+            --safe-bottom: var(--fm-safe-bottom, 0px);
+            --safe-left: var(--fm-safe-left, 0px);
+            --safe-right: var(--fm-safe-right, 0px);
+            --gut: 14px;
+            --maxw: 1180px;
+            --ease: cubic-bezier(.22, .61, .36, 1);
+            --display: -apple-system, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+            --mono: "Share Tech Mono", "SFMono-Regular", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--bg-fallback);
+            color: var(--ink);
+            font-family: var(--display);
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        button,
+        input {
+            font: inherit;
+        }
+        button {
+            color: inherit;
+            cursor: pointer;
+        }
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(color-mix(in srgb, var(--cyan) 6%, transparent) 1px, transparent 1px),
+                linear-gradient(90deg, color-mix(in srgb, var(--cyan) 6%, transparent) 1px, transparent 1px),
+                radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--gold) 12%, transparent), transparent 42%);
+            background-size: 72px 72px, 72px 72px, 100% 100%;
+        }
+
+        .shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: var(--maxw);
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: 0 var(--gut) calc(var(--safe-bottom) + 18px);
+            padding-left: calc(var(--safe-left) + var(--gut));
+            padding-right: calc(var(--safe-right) + var(--gut));
+        }
+        .shell::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 560px;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 80% 60% at 10% -5%, color-mix(in srgb, var(--cyan) 24%, transparent), color-mix(in srgb, var(--cyan) 0%, transparent) 55%),
+                radial-gradient(ellipse 80% 60% at 90% -5%, rgba(var(--gold-rgb), .22), rgba(var(--gold-rgb), 0) 55%),
+                radial-gradient(ellipse 42% 32% at 50% 0%, rgba(94, 231, 255, .08), transparent 62%);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            margin: 0 calc(var(--gut) * -1) 14px;
+            padding: calc(var(--safe-top) + 12px) var(--gut) 12px;
+            background: linear-gradient(to bottom, rgba(2, 12, 24, .97), rgba(3, 18, 34, .74) 72%, rgba(3, 18, 34, 0));
+            backdrop-filter: blur(14px);
+        }
+        .topbar::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 2%, var(--cyan) 18%, var(--gold-lite) 50%, var(--gold) 82%, transparent 98%);
+            box-shadow: 0 0 10px rgba(var(--gold-rgb), .5), 0 0 3px color-mix(in srgb, var(--cyan) 80%, transparent);
+        }
+        .title-row {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 8px;
+            min-width: 0;
+        }
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+        .brand-block {
+            flex: 1 1 66%;
+            min-width: 0;
+            min-height: 74px;
+            display: grid;
+            align-content: space-between;
+            gap: 6px;
+            padding: 2px 0;
+        }
+        h1 {
+            min-width: 0;
+            font-size: clamp(26px, 4.5vw, 44px);
+            font-weight: 900;
+            line-height: 1.18;
+            letter-spacing: .6px;
+            color: transparent;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            background: linear-gradient(100deg, var(--cyan) 0%, var(--gold-lite) 38%, #2d91ff 68%, var(--green) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            text-shadow: 0 0 16px color-mix(in srgb, var(--cyan) 46%, transparent), 0 0 28px rgba(var(--gold-rgb), .28);
+        }
+        .status-line {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 6px;
+            border-top: 1px solid color-mix(in srgb, var(--cyan) 28%, transparent);
+            font-family: var(--mono);
+            font-size: clamp(12px, 1.95vw, 17px);
+            font-weight: 800;
+            letter-spacing: 1.65px;
+            color: color-mix(in srgb, var(--cyan) 58%, transparent);
+            white-space: nowrap;
+        }
+        .status {
+            color: color-mix(in srgb, var(--cyan) 55%, transparent);
+        }
+        .maker {
+            color: color-mix(in srgb, var(--gold-lite) 72%, transparent);
+            text-shadow: 0 0 8px rgba(var(--gold-rgb), .4);
+            font-weight: 700;
+        }
+        .webhtv-badge {
+            flex: 0 1 32%;
+            align-self: stretch;
+            min-width: 168px;
+            min-height: 74px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border: 1px solid color-mix(in srgb, var(--cyan) 54%, transparent);
+            background: linear-gradient(135deg, rgba(94, 231, 255, .12), rgba(45, 145, 255, .08) 48%, rgba(56, 245, 198, .1));
+            color: var(--cyan);
+            font-family: var(--mono);
+            font-size: clamp(28px, 4.8vw, 46px);
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-shadow: 0 0 8px color-mix(in srgb, var(--cyan) 72%, transparent), 0 0 18px rgba(var(--gold-rgb), .45);
+            box-shadow: 0 0 14px color-mix(in srgb, var(--cyan) 18%, transparent), inset 0 0 14px color-mix(in srgb, var(--cyan) 8%, transparent);
+            animation: webhtvPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes webhtvPulse {
+            0%,
+            100% {
+                opacity: .74;
+                filter: brightness(.92);
+                box-shadow: 0 0 10px color-mix(in srgb, var(--cyan) 14%, transparent), inset 0 0 12px color-mix(in srgb, var(--cyan) 7%, transparent);
+            }
+            45% {
+                opacity: 1;
+                filter: brightness(1.28);
+                box-shadow: 0 0 24px color-mix(in srgb, var(--cyan) 36%, transparent), 0 0 34px rgba(var(--gold-rgb), .22), inset 0 0 18px color-mix(in srgb, var(--cyan) 14%, transparent);
+            }
+            55% {
+                opacity: .86;
+            }
+        }
+
+        /* 搜索工具栏 — 强制同一行自适应 */
+        .search-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: nowrap;
+            min-width: 0;
+        }
+        .search-input {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 44px;
+            border: 1px solid var(--line-strong);
+            border-radius: 2px;
+            background: var(--panel-strong);
+            color: var(--ink);
+            padding: 0 10px;
+            outline: none;
+            font-family: var(--mono);
+            font-size: 14px;
+            letter-spacing: .5px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .search-input:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--cyan) 35%, transparent);
+        }
+        .search-btn,
+        .tool-btn {
+            flex: 0 0 auto;
+            height: 44px;
+            padding: 0 12px;
+            border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent);
+            border-radius: 2px;
+            background: color-mix(in srgb, var(--cyan) 8%, transparent);
+            color: var(--cyan);
+            font-family: var(--mono);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 60%, transparent);
+            transition: background .2s, border-color .2s;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+        .search-btn:hover,
+        .tool-btn:hover {
+            background: color-mix(in srgb, var(--cyan) 16%, transparent);
+            border-color: var(--cyan);
+        }
+        .tool-btn {
+            background: var(--panel-strong);
+            border-color: var(--line-strong);
+            color: var(--ink-soft);
+            text-shadow: none;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;  /* 水平居中 */
+            gap: 4px;
+        }
+        .tool-btn:hover {
+            background: var(--panel-soft);
+            border-color: var(--line-strong);
+            color: var(--ink);
+        }
+
+        /* 平台 & 榜单 pill 切换 */
+        .tabs,
+        .chart-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tabs {
+            padding: 10px 0 6px;
+            margin: 0;
+        }
+        .chart-tabs {
+            padding: 0 0 2px;
+            margin: 0;
+        }
+        .tabs::-webkit-scrollbar,
+        .chart-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .tabs::before,
+        .chart-tabs::before {
+            flex: 0 0 auto;
+            width: 40px;
+            color: var(--ink-faint);
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .tabs::before {
+            content: "平台";
+        }
+        .chart-tabs::before {
+            content: "榜单";
+        }
+        .tab {
+            flex: 0 0 auto;
+            min-width: auto;
+            height: 28px;
+            min-height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 0 12px;
+            border-radius: 2px;
+            border: 1px solid color-mix(in srgb, var(--cyan) 15%, transparent);
+            background: color-mix(in srgb, var(--cyan) 3%, transparent);
+            color: color-mix(in srgb, var(--cyan) 45%, transparent);
+            font-size: 11px;
+            font-family: var(--mono);
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: color .2s, background .2s, border-color .2s, box-shadow .2s;
+        }
+        .tab.active,
+        .chart-tab.active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--cyan) 14%, transparent), color-mix(in srgb, var(--gold) 10%, transparent));
+            border-color: color-mix(in srgb, var(--cyan) 55%, transparent);
+            color: var(--cyan);
+            box-shadow: 0 0 10px color-mix(in srgb, var(--cyan) 22%, transparent), inset 0 0 10px color-mix(in srgb, var(--cyan) 6%, transparent);
+            text-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 60%, transparent);
+        }
+        .tab-icon {
+            width: auto;
+            height: auto;
+            min-width: 0;
+            flex: 0 0 auto;
+            display: inline;
+            border: 0 !important;
+            border-radius: 0;
+            background: transparent !important;
+            color: currentColor !important;
+            font-size: 11px;
+            font-weight: 900;
+            box-shadow: none;
+        }
+        .tab-icon::after {
+            content: ":";
+            margin-left: 2px;
+        }
+        .tab-label {
+            min-width: 0;
+            overflow: visible;
+            text-align: center;
+        }
+        .chart-tab {
+            flex: 0 0 auto;
+            max-width: 210px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border-radius: 2px;
+            border: 1px solid color-mix(in srgb, var(--cyan) 14%, transparent);
+            background: color-mix(in srgb, var(--cyan) 3%, transparent);
+            color: color-mix(in srgb, var(--cyan) 48%, transparent);
+            font-size: 11px;
+            font-family: var(--mono);
+            font-weight: 700;
+            letter-spacing: .5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color .2s, background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .chart {
+            margin-bottom: 28px;
+        }
+        .chart-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 4px 0 10px;
+        }
+        .chart h2 {
+            position: relative;
+            margin: 0;
+            padding-left: 16px;
+            font-size: 14px;
+            font-family: var(--mono);
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            text-shadow: 0 0 10px color-mix(in srgb, var(--cyan) 50%, transparent), 0 0 24px color-mix(in srgb, var(--cyan) 20%, transparent);
+        }
+        .chart h2::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 2px;
+            background: var(--cyan);
+            box-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 80%, transparent);
+        }
+        .chart h2::after {
+            content: "";
+            position: absolute;
+            left: 2px;
+            top: 50%;
+            transform: translateY(-50%) translateY(-4px);
+            width: 2px;
+            height: 8px;
+            background: var(--cyan);
+            box-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 80%, transparent);
+        }
+        .count {
+            color: var(--ink-faint);
+            font-size: 12px;
+            font-family: var(--mono);
+            white-space: nowrap;
+        }
+
+        /* 图片信息固定三列排列 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: var(--gut);
+        }
+        @media (min-width: 720px) {
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+            }
+        }
+        @media (min-width: 1180px) {
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+            }
+        }
+
+        .card {
+            position: relative;
+            min-width: 0;
+            text-align: left;
+            padding: 0;
+            background: rgba(8, 10, 18, .85);
+            border: 1px solid color-mix(in srgb, var(--cyan) 15%, transparent);
+            border-radius: 0;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform .16s var(--ease), border-color .15s, box-shadow .15s;
+            -webkit-tap-highlight-color: rgba(var(--gold-rgb), .18);
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 12px;
+            height: 12px;
+            border-top: 2px solid color-mix(in srgb, var(--cyan) 60%, transparent);
+            border-left: 2px solid color-mix(in srgb, var(--cyan) 60%, transparent);
+            z-index: 3;
+            pointer-events: none;
+        }
+        .card::after {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 12px;
+            height: 12px;
+            border-bottom: 2px solid rgba(var(--gold-rgb), .5);
+            border-right: 2px solid rgba(var(--gold-rgb), .5);
+            z-index: 3;
+            pointer-events: none;
+        }
+        .card:active {
+            transform: scale(.975);
+            border-color: var(--cyan);
+            box-shadow: 0 0 24px color-mix(in srgb, var(--cyan) 40%, transparent);
+        }
+        .card:hover {
+            border-color: color-mix(in srgb, var(--cyan) 35%, transparent);
+            box-shadow: 0 0 16px color-mix(in srgb, var(--cyan) 18%, transparent);
+        }
+        .poster {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            background: #071626;
+            background-image: radial-gradient(85% 65% at 26% -8%, rgba(var(--gold-rgb), .12), rgba(var(--gold-rgb), 0) 60%),
+                linear-gradient(150deg, #112b46 0%, #071827 55%, #030c16 100%);
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .poster::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 50%;
+            z-index: 2;
+            background: linear-gradient(to top, rgba(4, 5, 10, .85) 0%, rgba(4, 5, 10, .3) 50%, rgba(4, 5, 10, 0) 100%);
+            pointer-events: none;
+        }
+        .poster img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .3s var(--ease), filter .3s var(--ease);
+        }
+        .card:hover .poster img {
+            transform: scale(1.04);
+            filter: brightness(1.15);
+        }
+        .rank {
+            position: absolute;
+            z-index: 4;
+            left: 7px;
+            top: 7px;
+            min-width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            border-radius: 0;
+            color: var(--gold-lite);
+            background: rgba(3, 14, 26, .8);
+            border: 1px solid rgba(var(--gold-rgb), .5);
+            box-shadow: 0 0 10px rgba(var(--gold-rgb), .38);
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 900;
+            pointer-events: none;
+        }
+        .meta {
+            padding: 7px 9px 8px;
+            background: color-mix(in srgb, var(--cyan) 1%, transparent);
+            position: relative;
+            overflow: hidden;
+        }
+        .meta::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(0deg,
+                    color-mix(in srgb, var(--cyan) 4%, transparent) 0px,
+                    color-mix(in srgb, var(--cyan) 4%, transparent) 1px,
+                    transparent 1px,
+                    transparent 3px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .name {
+            position: relative;
+            z-index: 1;
+            height: 20px;
+            line-height: 20px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: .5px;
+            text-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 55%, transparent), 0 0 14px color-mix(in srgb, var(--cyan) 25%, transparent);
+            cursor: pointer;
+            transition: color .2s;
+        }
+        .card:hover .name {
+            color: var(--cyan);
+        }
+        .kind {
+            position: relative;
+            z-index: 1;
+            margin-top: 6px;
+            height: 17px;
+            line-height: 17px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: color-mix(in srgb, var(--cyan) 35%, transparent);
+            font-family: var(--mono);
+            font-size: 11px;
+            pointer-events: none;
+        }
+
+        /* 卡片底部操作按钮 */
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 42px;
+            gap: 6px;
+            padding: 0 8px 8px;
+            background: rgba(8, 10, 18, .85);
+        }
+        .mini {
+            min-height: 32px;
+            padding: 0 8px;
+            border-radius: 2px;
+            border: 1px solid var(--line-strong);
+            background: var(--panel-strong);
+            color: var(--ink);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            font-family: var(--mono);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background .2s, border-color .2s;
+        }
+        .mini.play {
+            border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+            background: color-mix(in srgb, var(--cyan) 8%, transparent);
+            color: var(--cyan);
+            text-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 60%, transparent);
+        }
+        .mini.play:hover {
+            background: color-mix(in srgb, var(--cyan) 16%, transparent);
+            border-color: var(--cyan);
+        }
+        .mini:hover {
+            background: var(--panel-soft);
+        }
+
+        /* 盘搜面板 */
+        .pan-sheet {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: none;
+            padding: 18px;
+            background: rgba(0, 0, 0, .62);
+            backdrop-filter: blur(6px);
+        }
+        .pan-sheet.active {
+            display: grid;
+            place-items: center;
+        }
+        .pan-panel {
+            width: min(760px, 100%);
+            max-height: min(760px, 92vh);
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            border: 1px solid var(--line-strong);
+            border-radius: 0;
+            background: var(--panel-strong);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .55), 0 0 24px color-mix(in srgb, var(--cyan) 12%, transparent);
+            overflow: hidden;
+        }
+        .pan-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--line-soft);
+            background: rgba(8, 10, 18, .78);
+        }
+        .pan-head h3 {
+            font-size: 15px;
+            font-family: var(--mono);
+            color: var(--cyan);
+            letter-spacing: 1.5px;
+        }
+        .pan-head p {
+            margin-top: 4px;
+            color: var(--ink-faint);
+            font-family: var(--mono);
+            font-size: 11px;
+        }
+        .pan-results {
+            display: grid;
+            gap: 8px;
+            align-content: start;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .pan-item {
+            display: grid;
+            gap: 6px;
+            width: 100%;
+            min-width: 0;
+            padding: 11px;
+            border-radius: 0;
+            border: 1px solid color-mix(in srgb, var(--cyan) 15%, transparent);
+            background: rgba(8, 10, 18, .85);
+            color: var(--ink);
+            text-align: left;
+            cursor: pointer;
+            font-family: var(--mono);
+        }
+        .pan-item b {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 13px;
+            color: var(--ink);
+        }
+        .pan-meta,
+        .pan-url {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--ink-faint);
+            font-size: 11px;
+        }
+
+        .empty,
+        .error {
+            padding: 28px 12px;
+            color: var(--ink-faint);
+            text-align: center;
+            border: 1px dashed var(--line-strong);
+            border-radius: 0;
+            background: rgba(8, 10, 18, .55);
+            font-family: var(--mono);
+        }
+        .error {
+            color: var(--danger);
+        }
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            z-index: 90;
+            max-width: min(92vw, 520px);
+            transform: translateX(-50%);
+            padding: 10px 12px;
+            border: 1px solid var(--line-strong);
+            border-radius: 0;
+            background: var(--panel-strong);
+            color: var(--ink);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+            display: none;
+            font-family: var(--mono);
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        /* 小屏幕 */
+        @media (max-width: 640px) {
+            :root {
+                --gut: 10px;
+            }
+            .chart-tab {
+                max-width: 168px;
+            }
+            .title-row {
+                align-items: stretch;
+                flex-direction: row;
+                gap: 8px;
+            }
+            .brand-block {
+                flex: 1 1 66%;
+                min-height: 62px;
+                gap: 4px;
+                padding: 1px 0;
+            }
+            h1 {
+                font-size: clamp(25px, 6.2vw, 34px);
+                letter-spacing: .1px;
+            }
+            .status-line {
+                justify-content: flex-start;
+                flex-wrap: nowrap;
+                gap: 6px;
+                padding-top: 4px;
+                font-size: clamp(10px, 2.75vw, 13px);
+                letter-spacing: .9px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .webhtv-badge {
+                flex: 0 1 31%;
+                min-width: 0;
+                min-height: 62px;
+                padding: 0 8px;
+                font-size: clamp(22px, 6vw, 34px);
+                letter-spacing: .06em;
+            }
+            .grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: var(--gut);
+            }
+            .name {
+                font-size: 11px;
+                height: 17px;
+                line-height: 17px;
+            }
+            .kind {
+                font-size: 9px;
+                margin-top: 4px;
+            }
+            .search-toolbar {
+                gap: 5px;
+            }
+            .search-input {
+                font-size: 12px;
+                padding: 0 8px;
+                height: 40px;
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            /* 移动端按钮总宽度与WEBHTV徽章一致（31%） */
+            .search-btn,
+            .tool-btn {
+                flex: 0 0 calc((31% - 5px) / 2);
+                height: 40px;
+                padding: 0 6px;
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                justify-content: center;  /* 确保移动端也居中 */
+            }
+            .actions {
+                grid-template-columns: 1fr;
+                gap: 5px;
+                padding: 0 6px 6px;
+            }
+            .actions .mini {
+                min-height: 28px;
+                font-size: 11px;
+            }
+            .actions .mini:not(.play) {
+                display: none;
+            }
+            .pan-sheet {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="topbar">
+            <div class="title-row">
+                <div class="brand-block">
+                    <h1>RateFuse 榜单</h1>
+                    <div class="status-line">
+                        <span id="status" class="status">加载中...</span>
+                        <span class="maker">优化来至《公众号👉UU向导👈》</span>
+                    </div>
+                </div>
+                <div class="webhtv-badge">WEBHTV</div>
+            </div>
+            <div class="search-toolbar">
+                <input id="webhtvSearchInput" class="search-input" type="search" placeholder="输入片名，直接搜索 WEBHTV ..." autocomplete="off" />
+                <button id="webhtvSearchBtn" class="search-btn" type="button">搜索</button>
+                <button id="reloadBtn" class="tool-btn" type="button" title="刷新榜单">刷新</button>
+            </div>
+        </div>
+
+        <!-- 隐藏的盘搜地址配置 -->
+        <input id="panBase" type="hidden" value="https://so.252035.xyz" />
+
+        <div id="tabs" class="tabs"></div>
+        <div id="chartTabs" class="chart-tabs"></div>
+        <main id="content"></main>
+    </div>
+
+    <!-- 盘搜面板 -->
+    <section id="panSheet" class="pan-sheet" aria-hidden="true">
+        <div class="pan-panel">
+            <div class="pan-head">
+                <div>
+                    <h3 id="panTitle">盘搜资源</h3>
+                    <p id="panHint">等待搜索</p>
+                </div>
+                <button id="panClose" class="mini" type="button">关闭</button>
+            </div>
+            <div id="panResults" class="pan-results"></div>
+        </div>
+    </section>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const API = 'https://ratefuse.cn/api/charts/public';
+        const qs = new URLSearchParams(location.search);
+        const platformsOrder = ['豆瓣', 'IMDb', 'Rotten Tomatoes', 'Metacritic', 'Letterboxd', 'TMDB', 'Trakt'];
+        const panDiskTypes = [
+            ['quark', '夸克'], ['aliyun', '阿里'], ['baidu', '百度'], ['uc', 'UC'],
+            ['tianyi', '天翼'], ['xunlei', '迅雷'], ['123', '123'], ['115', '115'],
+            ['mobile', '移动'], ['pikpak', 'PikPak'], ['guangya', '光鸭'], ['magnet', '磁力'], ['ed2k', '电驴']
+        ];
+
+        const state = {
+            charts: [],
+            platform: '',
+            chartKey: '',
+            panResults: [],
+            panKeyword: '',
+        };
+
+        const $ = (id) => document.getElementById(id);
+
+        function toast(text) {
+            const el = $('toast');
+            el.textContent = text;
+            el.style.display = 'block';
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(() => { el.style.display = 'none'; }, 2200);
+        }
+
+        function triggerWebhtvSearch(title) {
+            if (!title || !String(title).trim()) return;
+            const keyword = String(title).trim();
+            toast('搜索：' + keyword);
+
+            if (window.fm) {
+                try {
+                    if (typeof window.fm.search === 'function') {
+                        window.fm.search(keyword);
+                        return;
+                    }
+                    if (typeof window.fm.req === 'function') {
+                        window.fm.req('search', {
+                            method: 'POST',
+                            body: JSON.stringify({ keyword }),
+                            headers: { 'Content-Type': 'application/json' },
+                        });
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('WEBHTV fm 搜索调用失败:', e);
+                }
+            }
+
+            try {
+                const schemeUrl = 'webhtv://search?keyword=' + encodeURIComponent(keyword);
+                window.location.href = schemeUrl;
+            } catch (e) { }
+        }
+
+        /* ========== 盘搜相关函数 ========== */
+        function sdk() {
+            const pan = window.fm && window.fm.pan ? window.fm.pan : {};
+            return {
+                req: window.fm && window.fm.req ? window.fm.req.bind(window.fm) : browserRequest,
+                pan: Object.assign({}, pan),
+            };
+        }
+
+        async function browserRequest(url, options) {
+            const init = options || {};
+            const response = await fetch(url, {
+                method: init.method || 'GET',
+                headers: init.headers || {},
+                body: init.method && init.method !== 'GET' && init.method !== 'HEAD' ? init.body || '' : undefined,
+                credentials: init.credentials === 'include' ? 'include' : 'same-origin',
+            });
+            const body = init.responseType === 'json' ? await response.json() : await response.text();
+            return { ok: response.ok, status: response.status, url: response.url, body };
+        }
+
+        function normalizePanBase(value) {
+            let base = String(value || '').trim() || 'https://so.252035.xyz';
+            if (!/^https?:\/\//i.test(base)) base = 'https://' + base;
+            return base.replace(/\/+$/, '');
+        }
+
+        function panApi(path) {
+            const base = normalizePanBase($('panBase').value);
+            localStorage.setItem('ratefusePanBase', base);
+            if (base.endsWith('/api') && path.startsWith('/api/')) return base + path.slice(4);
+            return base + path;
+        }
+
+        function normalizePanDiskType(type) {
+            const value = String(type || '').trim().toLowerCase();
+            if (value === 'ali' || value === 'alipan') return 'aliyun';
+            if (value === '123pan') return '123';
+            if (value === '139' || value === 'caiyun') return 'mobile';
+            if (value === 'pikpakdrive') return 'pikpak';
+            if (value === 'guangyapan') return 'guangya';
+            if (value === 'bt' || value === 'magnetlink') return 'magnet';
+            return value;
+        }
+
+        function panDiskName(type) {
+            const normalized = normalizePanDiskType(type);
+            const found = panDiskTypes.find((item) => item[0] === normalized);
+            return found ? found[1] : normalized || '网盘';
+        }
+
+        function panSearchPayload(keyword) {
+            return {
+                kw: keyword,
+                res: 'merge',
+                src: 'all',
+                cloud_types: panDiskTypes.map((item) => item[0]),
+            };
+        }
+
+        async function postJson(url, payload) {
+            const response = await sdk().req(url, {
+                method: 'POST',
+                responseType: 'text',
+                timeout: 28,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload || {}),
+            });
+            if (response && response.error) throw new Error(response.error);
+            if (response && response.ok === false) throw new Error('HTTP ' + (response.status || 0));
+            const body = response && response.body;
+            const data = typeof body === 'string' ? JSON.parse(body || '{}') : body || {};
+            if (data && data.code && Number(data.code) !== 0 && Number(data.code) !== 200) {
+                throw new Error(data.message || data.error || ('HTTP ' + data.code));
+            }
+            return data;
+        }
+
+        function normalizePanUrl(url) {
+            try {
+                const parsed = new URL(url);
+                parsed.hash = '';
+                parsed.hostname = parsed.hostname.toLowerCase();
+                return parsed.toString();
+            } catch (e) {
+                return String(url || '').trim();
+            }
+        }
+
+        function normalizePanResults(merged, keyword) {
+            const seen = new Set();
+            const items = [];
+            Object.entries(merged || {}).forEach(([type, links]) => {
+                const diskType = normalizePanDiskType(type);
+                if (!Array.isArray(links)) return;
+                links.forEach((link) => {
+                    const url = String(link && (link.url || link.link || link.href) || '').trim();
+                    if (!url) return;
+                    const key = diskType + '|' + normalizePanUrl(url);
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    items.push({
+                        key,
+                        diskType,
+                        url,
+                        normalizedUrl: String(link.normalized_url || link.normalizedUrl || '').trim(),
+                        password: String(link.password || link.pwd || link.passcode || link.code || '').trim(),
+                        title: String(link.note || link.name || link.title || link.work_title || keyword || '盘搜资源').trim(),
+                        source: String(link.source || link.channel || link.plugin || '').trim(),
+                        datetime: String(link.datetime || link.time || link.created_at || '').trim(),
+                    });
+                });
+            });
+            return items;
+        }
+
+        function buildPanPlayPayload(item) {
+            let url = String(item && (item.normalizedUrl || item.url) || '').trim();
+            if (!url) return null;
+            if (/^push:\/\//i.test(url)) url = url.replace(/^push:\/\//i, '');
+            return {
+                type: normalizePanDiskType(item.diskType),
+                url,
+                password: item.password || '',
+                title: item.title || state.panKeyword || url,
+            };
+        }
+
+        function addPanPassword(url, password, item) {
+            let target = String(url || '').trim();
+            const code = String(password || '').trim();
+            if (!target || !code || /(?:[?&#])(pwd|password|passcode|code)=/i.test(target)) return target;
+            if (/^(magnet:|ed2k:\/\/)/i.test(target)) return target;
+            const param = normalizePanDiskType(item && item.diskType) === '115' ? 'password' : 'pwd';
+            try {
+                const parsed = new URL(target);
+                parsed.searchParams.set(param, code);
+                return parsed.toString();
+            } catch (e) {
+                const sep = target.includes('?') ? '&' : '?';
+                return target + sep + param + '=' + encodeURIComponent(code);
+            }
+        }
+
+        async function searchPanResources(item) {
+            const keyword = String(item && item.title || '').trim();
+            if (!keyword) return toast('缺少搜索标题');
+            state.panKeyword = keyword;
+            state.panResults = [];
+            openPanSheet(keyword);
+            $('panResults').innerHTML = '<div class="empty">正在搜索盘搜资源...</div>';
+            $('panHint').textContent = keyword + ' · 搜索中';
+            try {
+                const body = await postJson(panApi('/api/search'), panSearchPayload(keyword));
+                const data = body && body.data ? body.data : body;
+                state.panResults = normalizePanResults(data && data.merged_by_type || {}, keyword);
+                $('panHint').textContent = keyword + ' · 找到 ' + state.panResults.length + ' 条';
+                renderPanResults();
+            } catch (err) {
+                $('panHint').textContent = keyword + ' · 搜索失败';
+                $('panResults').innerHTML = '<div class="error">盘搜失败：' + escapeHtml(err.message || String(err)) + '</div>';
+            }
+        }
+
+        function openPanSheet(keyword) {
+            $('panTitle').textContent = '盘搜资源';
+            $('panHint').textContent = keyword || '等待搜索';
+            $('panSheet').classList.add('active');
+            $('panSheet').setAttribute('aria-hidden', 'false');
+        }
+
+        function closePanSheet() {
+            $('panSheet').classList.remove('active');
+            $('panSheet').setAttribute('aria-hidden', 'true');
+        }
+
+        function renderPanResults() {
+            const root = $('panResults');
+            if (!state.panResults.length) {
+                root.innerHTML = '<div class="empty">暂无盘搜资源</div>';
+                return;
+            }
+            root.replaceChildren(...state.panResults.map((item) => {
+                const button = document.createElement('button');
+                button.className = 'pan-item';
+                button.type = 'button';
+                button.innerHTML = '<b>' + escapeHtml(item.title || state.panKeyword || '盘搜资源') + '</b>'
+                    + '<div class="pan-meta">' + escapeHtml(panDiskName(item.diskType))
+                    + (item.password ? ' · 提取码 ' + escapeHtml(item.password) : '')
+                    + (item.source ? ' · ' + escapeHtml(item.source) : '') + '</div>'
+                    + '<div class="pan-url">' + escapeHtml(item.normalizedUrl || item.url) + '</div>';
+                button.addEventListener('click', () => playPanResult(item));
+                return button;
+            }));
+        }
+
+        async function playPanResult(item) {
+            const payload = buildPanPlayPayload(item);
+            if (!payload) return;
+            try {
+                const pan = sdk().pan || {};
+                if (pan.play) {
+                    await pan.play(payload);
+                    toast('已交给原生播放');
+                    return;
+                }
+                window.open(addPanPassword(payload.url, payload.password, payload), '_blank', 'noopener,noreferrer');
+                toast('已打开网盘链接');
+            } catch (err) {
+                toast('播放失败：' + (err.message || 'unknown'));
+            }
+        }
+
+        async function copyName(item) {
+            const text = item.title || '';
+            try {
+                await navigator.clipboard.writeText(text);
+                toast('已复制：' + text);
+            } catch (e) {
+                prompt('复制片名', text);
+            }
+        }
+
+        function initPanBase() {
+            const saved = qs.get('pan') || localStorage.getItem('ratefusePanBase') || 'https://so.252035.xyz';
+            $('panBase').value = normalizePanBase(saved);
+        }
+
+        /* ========== 榜单渲染 ========== */
+        function preferredPlatforms(charts) {
+            const set = new Set(charts.map((c) => c.platform));
+            return platformsOrder.filter((p) => set.has(p)).concat([...set].filter((p) => !platformsOrder.includes(p)));
+        }
+
+        function platformIconClass(p) {
+            const map = {
+                '豆瓣': 'douban',
+                'IMDb': 'imdb',
+                'Rotten Tomatoes': 'rt',
+                'Metacritic': 'metacritic',
+                'Letterboxd': 'letterboxd',
+                'TMDB': 'tmdb',
+                'Trakt': 'trakt',
+            };
+            return map[p] || 'tmdb';
+        }
+
+        function platformIconText(p) {
+            const map = {
+                '豆瓣': '豆',
+                'IMDb': 'I',
+                'Rotten Tomatoes': 'R',
+                'Metacritic': 'M',
+                'Letterboxd': 'L',
+                'TMDB': 'T',
+                'Trakt': 'T',
+            };
+            return map[p] || String(p).charAt(0);
+        }
+
+        function chartKey(chart) {
+            return String(chart && (chart.chart_id || chart.id || chart.key || chart.chart_name) || '');
+        }
+
+        function chartsForPlatform(platform) {
+            return state.charts
+                .filter((c) => c.platform === platform)
+                .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || String(a.chart_name).localeCompare(String(b.chart_name)));
+        }
+
+        function renderTabs() {
+            const tabs = $('tabs');
+            const platforms = preferredPlatforms(state.charts);
+            if (!state.platform && platforms.length) state.platform = platforms[0];
+            tabs.innerHTML = platforms.map((p) =>
+                '<button class="tab ' + (p === state.platform ? 'active' : '') +
+                '" data-platform="' + escapeAttr(p) + '">' +
+                '<span class="tab-icon ' + platformIconClass(p) + '">' + platformIconText(p) + '</span>' +
+                '<span class="tab-label">' + escapeHtml(p) + '</span></button>'
+            ).join('');
+            tabs.querySelectorAll('button').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    state.platform = btn.dataset.platform;
+                    state.chartKey = '';
+                    render();
+                });
+            });
+        }
+
+        function renderChartTabs(charts) {
+            const tabs = $('chartTabs');
+            if (!charts.length) {
+                tabs.innerHTML = '';
+                state.chartKey = '';
+                return;
+            }
+            if (!charts.some((chart) => chartKey(chart) === state.chartKey)) state.chartKey = chartKey(charts[0]);
+            tabs.innerHTML = charts.map((chart) => {
+                const key = chartKey(chart);
+                return '<button class="chart-tab ' + (key === state.chartKey ? 'active' : '') +
+                    '" data-chart="' + escapeAttr(key) + '" title="' + escapeAttr(chart.chart_name || '') + '">' +
+                    escapeHtml(chart.chart_name || '未命名榜单') + '</button>';
+            }).join('');
+            tabs.querySelectorAll('button').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    state.chartKey = btn.dataset.chart;
+                    render();
+                });
+            });
+        }
+
+        function render() {
+            renderTabs();
+            const content = $('content');
+            const charts = chartsForPlatform(state.platform);
+            renderChartTabs(charts);
+            if (!charts.length) {
+                content.innerHTML = '<div class="empty">暂无榜单</div>';
+                return;
+            }
+            const chart = charts.find((item) => chartKey(item) === state.chartKey) || charts[0];
+            const entries = [...(chart.entries || [])].sort((a, b) => a.rank - b.rank);
+            if (!entries.length) {
+                content.innerHTML = '<div class="empty">该榜单暂无条目</div>';
+                return;
+            }
+            content.innerHTML =
+                '<section class="chart"><div class="chart-head"><h2>' + escapeHtml(chart.chart_name || '') +
+                '</h2><span class="count">' + entries.length + ' 部</span></div>' +
+                '<div class="grid">' + entries.map(cardHtml).join('') + '</div></section>';
+
+            // 卡片整体点击 → WEBHTV 搜索
+            content.querySelectorAll('.card').forEach((card) => {
+                card.addEventListener('click', () => {
+                    const title = card.dataset.title || '';
+                    if (title) triggerWebhtvSearch(title);
+                });
+            });
+            // 盘搜按钮 → 打开盘搜面板（阻止冒泡）
+            content.querySelectorAll('[data-play]').forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    searchPanResources(JSON.parse(decodeURIComponent(btn.dataset.play)));
+                });
+            });
+            // 复制按钮 → 复制片名（阻止冒泡）
+            content.querySelectorAll('[data-copy]').forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    copyName(JSON.parse(decodeURIComponent(btn.dataset.copy)));
+                });
+            });
+        }
+
+        function cardHtml(item) {
+            const title = item.title || '';
+            const type = item.media_type === 'tv' ? '剧集' : '电影';
+            const poster = item.poster ?
+                '<img src="' + escapeAttr(item.poster) + '" alt="' + escapeAttr(title) + '" loading="lazy">' :
+                '';
+            const data = encodeURIComponent(JSON.stringify({
+                title: item.title || '',
+                media_type: item.media_type || 'movie',
+                tmdb_id: item.tmdb_id || '',
+            }));
+            return '<article class="card" data-title="' + escapeAttr(title) + '">' +
+                '<div class="poster">' + poster +
+                '<span class="rank">' + escapeHtml(String(item.rank || '')) + '</span></div>' +
+                '<div class="meta">' +
+                '<div class="name">' + escapeHtml(title) + '</div>' +
+                '<div class="kind">' + type + ' · TMDB ' + escapeHtml(String(item.tmdb_id || '')) + '</div>' +
+                '</div>' +
+                '<div class="actions">' +
+                '<button class="mini play" type="button" data-play="' + data + '">盘搜</button>' +
+                '<button class="mini" type="button" data-copy="' + data + '" title="复制片名">复制</button>' +
+                '</div></article>';
+        }
+
+        async function load() {
+            $('status').textContent = '加载中...';
+            $('content').innerHTML = '<div class="empty">正在获取 RateFuse 榜单</div>';
+            try {
+                const res = await fetch(API, { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                state.charts = (await res.json()).filter((c) => c.visible !== false);
+                const platforms = preferredPlatforms(state.charts);
+                if (!platforms.includes(state.platform)) {
+                    state.platform = platforms[0] || '';
+                    state.chartKey = '';
+                }
+                $('status').textContent = state.charts.length + '个榜单';
+                render();
+            } catch (err) {
+                $('status').textContent = '加载失败';
+                $('content').innerHTML = '<div class="error">榜单加载失败：' + escapeHtml(err.message || String(err)) + '</div>';
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value).replace(/[&<>"']/g, (s) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[s]));
+        }
+
+        function escapeAttr(value) {
+            return escapeHtml(value).replace(/`/g, '&#96;');
+        }
+
+        /* ========== 事件绑定 ========== */
+        const searchInput = $('webhtvSearchInput');
+        const searchBtn = $('webhtvSearchBtn');
+        const reloadBtn = $('reloadBtn');
+
+        function performSearchFromInput() {
+            const query = searchInput.value.trim();
+            if (query) {
+                triggerWebhtvSearch(query);
+                searchInput.value = '';
+            }
+        }
+
+        searchBtn.addEventListener('click', performSearchFromInput);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                performSearchFromInput();
+            }
+        });
+
+        reloadBtn.addEventListener('click', load);
+
+        $('panClose').addEventListener('click', closePanSheet);
+        $('panSheet').addEventListener('click', (event) => {
+            if (event.target === $('panSheet')) closePanSheet();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if ($('panSheet').classList.contains('active')) {
+                    closePanSheet();
+                } else {
+                    $('toast').style.display = 'none';
+                    clearTimeout(toast.timer);
+                }
+            }
+        });
+
+        initPanBase();
+        load();
+    </script>
+</body>
+</html>
